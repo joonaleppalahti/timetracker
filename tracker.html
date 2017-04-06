@@ -1,0 +1,220 @@
+<!doctype html>
+<html>
+<head>
+<title>TimeTracker</title>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
+
+<style>
+.container {
+	padding-top: 15px;
+	}
+	
+.row {
+	padding-bottom: 2px;
+	}
+	
+#clock {
+	text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+	<div class="row">
+		<div class="col-sm-4">
+			<button type="button" id="btnStart" onClick="saveStart()" class="btn btn-default">Start</button>
+		</div>
+		<div class="col-sm-4">
+			<div id="clock">
+			</div>
+		</div>
+		<div class="col-sm-4">
+		<button type="button" id="btnLogout" class="btn btn-default pull-right">Logout</button>
+		</div>
+	</div>
+
+<table id="table" class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Start Date</th>
+        <th>Start Time</th>
+        <th>Stop Date</th>
+		<th>Stop Time</th>
+		<th>Minutes Worked</th>
+      </tr>
+    </thead>
+</table>
+
+</div>
+
+<script>
+
+// Initialize Firebase
+var config = {
+	apiKey: "YOUR_FIREBASE_INFO_HERE",
+	authDomain: "YOUR_FIREBASE_INFO_HERE",
+	databaseURL: "YOUR_FIREBASE_INFO_HERE",
+	storageBucket: "YOUR_FIREBASE_INFO_HERE",
+	messagingSenderId: "YOUR_FIREBASE_INFO_HERE"
+	};
+firebase.initializeApp(config);
+
+const btnStart = document.getElementById("btnStart");
+const btnStop = document.getElementById("btnStop");
+const btnLogout = document.getElementById("btnLogout");
+
+// Sign out
+btnLogout.addEventListener("click", e => {
+	firebase.auth().signOut();
+});
+
+// Realtime listener
+firebase.auth().onAuthStateChanged(firebaseUser => {
+	if(firebaseUser) {
+		btnLogout.classList.remove("disabled");
+	}
+	else {
+		console.log("not logged in");
+		btnLogout.classList.add("disabled");
+		window.location.replace("index.html");
+	}
+});
+
+var d = new Date();
+var date = (d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear());
+var time = (d.getHours()+':'+d.getMinutes());
+var t = d.getTime();
+var originalT = t;
+var seconds = 0;
+var minutes = 0;
+var hours = 0;
+var isStart = 1;
+var database = firebase.database();
+
+function padNumbers(number) {
+	if (number<=99) { number = ("0"+number).slice(-2); }
+	return number;
+}
+
+function setOriginalT() {
+	d = new Date();
+	t = d.getTime();
+	originalT = t;
+	minutes = 0;
+	hours = 0;
+	return originalT;
+}
+
+function clockFunction() {
+	d = new Date();
+	t = d.getTime();
+	t = t - originalT;
+	t = t/1000;
+	t = t.toFixed(0);
+	seconds = t;
+	
+	if (seconds >= 60) {
+		minutes++;
+		seconds = 0;
+		originalT = d.getTime();
+	}
+	
+	if (minutes >= 60) {
+		hours++;
+		minutes = 0;
+	}
+	
+	document.getElementById("clock").innerHTML = padNumbers(hours)+":"+padNumbers(minutes)+":"+padNumbers(seconds);
+}
+
+var StartDate;
+var startTime;
+var startT;
+
+function saveStart(){
+	
+	// Save starting time and start timer
+	if (isStart == 1) {
+	
+	var startD = new Date();
+	startDate = (startD.getDate()+'/'+(startD.getMonth()+1)+'/'+startD.getFullYear());
+	startTime = startD.toTimeString().split(' ')[0];
+	startTime = startTime.split(':');
+	startTime = startTime[0]+":"+startTime[1];
+	console.log(startTime);
+	
+	startT = startD.getTime();
+	setOriginalT();
+	var clockInterval = setInterval(clockFunction, 1000);
+
+	isStart--;
+	$("#btnStart").html("Stop");
+	clockFunction();
+	$("#clock").show();
+	console.log("START");
+	return;
+	}
+	
+	// Save stop time and push to batabase
+	if (isStart == 0) {
+	var firebaseRef = firebase.database().ref();
+	var stopD = new Date();
+	var stopDate = (stopD.getDate()+'/'+(stopD.getMonth()+1)+'/'+stopD.getFullYear());
+	stopTime = stopD.toTimeString().split(' ')[0];
+	stopTime = stopTime.split(':');
+	stopTime = stopTime[0]+":"+stopTime[1];
+	stopT = stopD.getTime();
+	
+	var workTime;
+	var hours;
+	var minutes;
+	var seconds;
+	workTime = stopT - startT;
+	workTime = workTime/1000;
+	workTime = workTime/60;
+	workTime = workTime.toFixed(0);
+	
+	firebaseRef.push({
+		startD: startDate,
+		startTime: startTime,
+		startT: startT,
+		stopD: stopDate,
+		stopTime: stopTime,
+		stopT: stopT,
+		workMinutes: workTime
+	});
+	
+	isStart++;
+	$("#btnStart").html("Start");
+	$("#clock").hide();
+	console.log("STOP");
+	return;
+	}
+}
+
+// Insert data to table
+var startRef = firebase.database().ref();
+startRef.on("child_added", snap =>
+
+{	var getStartDate = snap.child("startD").val();
+	var getStartTime = snap.child("startTime").val();
+	var getStopDate = snap.child("stopD").val();
+	var getStopTime = snap.child("stopTime").val();
+	var getWorkMinutes = snap.child("workMinutes").val();
+	
+$("#table").append("<tbody>"+"<tr>"+"<td>"+getStartDate+"</td>"
++"<td>"+getStartTime+"</td>"+"<td>"+getStopDate+"</td>"
++"<td>"+getStopTime+"</td>"+"<td>"+getWorkMinutes+"</td>"+"</tbody>");
+});
+
+</script>
+</body>
+</html>

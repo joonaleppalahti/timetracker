@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+<title>TimeTracker</title>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
+
+<style>
+.container {
+	padding-top: 10px;
+	}
+	
+.row {
+	padding-bottom: 2px;
+	}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+	<div class="row">
+		<div class="col-sm-4">
+			<div class="input-group">
+				<input type="text" id="txtEmail" class="form-control" placeholder="Email" aria-describedby="username">
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-4">
+			<div class="input-group">
+				<input type="password" id="txtPassword" class="form-control" placeholder="Password" aria-describedby="password">
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-4">
+			<button type="button" id="btnLogin" class="btn btn-default">Login</button>
+		</div>
+	</div>
+<div>
+
+<script>
+// Initialize Firebase
+var config = {
+	apiKey: "YOUR_FIREBASE_INFO_HERE",
+	authDomain: "YOUR_FIREBASE_INFO_HERE",
+	databaseURL: "YOUR_FIREBASE_INFO_HERE",
+	storageBucket: "YOUR_FIREBASE_INFO_HERE",
+	messagingSenderId: "YOUR_FIREBASE_INFO_HERE"
+	};
+firebase.initializeApp(config);
+
+const txtEmail = document.getElementById("txtEmail");
+const txtPassword = document.getElementById("txtPassword");
+const btnLogin = document.getElementById("btnLogin");
+
+// Add login event
+btnLogin.addEventListener("click", e => {
+	// Get email and password
+	const email = txtEmail.value;
+	const pass = txtPassword.value;
+	const auth = firebase.auth();
+	// Sign in
+	const promise = auth.signInWithEmailAndPassword(email, pass);
+	promise.catch(e => console.log(e.message));
+	
+	// Realtime listener
+	firebase.auth().onAuthStateChanged(firebaseUser => {
+		if(firebaseUser) {
+			window.location.replace("tracker.html");
+		}
+		else {
+			console.log("not logged in");
+		}
+	});
+});	
+</script>
+
+</body>
+</html>
