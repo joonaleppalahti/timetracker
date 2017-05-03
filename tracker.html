@@ -11,48 +11,181 @@
 <script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
 
 <style>
-.container {
-	padding-top: 15px;
-	}
-	
-.row {
-	padding-bottom: 2px;
-	}
-	
-#clock {
+@import url('https://fonts.googleapis.com/css?family=Sarala');
+
+#pageWrapper {
+	font-family: 'Sarala', sans-serif;
+}
+
+body {
+	background-color: #f2f2f2;
+}
+
+#projectTitle {
 	text-align: center;
 }
+
+.timerButtons {
+	width: 100px;
+}
+
+#table {
+	background-color: #fff;
+	border-radius: 4px;
+}
+
+.navbar {
+	margin-bottom: 10px;
+}
+
+.navbar-nav {
+	margin: 0px;
+}
+
+.navbar-form {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+p {
+	margin: 10px;
+}
+
+#btnStart {
+	float: right;
+}
+
+#btnLogout {
+	text-align: center;
+}
+
+.dropdown-menu {
+	padding: 0;
+}
+
+#dropdownMenu1 {
+	text-align: center;
+}
+
+.projectNames {
+	margin-top: 0 !important;
+}
+
+#projectList {
+	background: rgba(255, 255, 255, 0.0);
+	border-style: none;
+	box-shadow: 0px 0px 0px #fff;
+}
+
+.input-group {
+	width: 95%;
+	margin: auto;
+}
+
+@media screen and (max-width: 768px) {
+	#myNavbar {
+	border-bottom: solid;
+	border-bottom-width: 2px;
+	border-bottom-color: #b3b3b3;
+	}
+}
+
+@media screen and (min-width: 768px) {
+    #pageWrapper {
+        max-width: 1000px;
+		margin: auto;
+    }
+	
+	.navbar-form {
+		margin-top: 8px;
+		margin-bottom: 8px;
+	}
+}
+
 </style>
 </head>
-
 <body>
 
-<div class="container">
-	<div class="row">
-		<div class="col-sm-4">
-			<button type="button" id="btnStart" onClick="saveStart()" class="btn btn-default">Start</button>
-		</div>
-		<div class="col-sm-4">
-			<div id="clock">
+<div id="pageWrapper">
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>                        
+      </button>
+      <a class="navbar-brand" href="#">TimeTracker</a>
+    </div>
+	<div class="collapse navbar-collapse" id="myNavbar">
+	<ul class="nav navbar-nav">
+		<li class="dropdown">
+			<a class="dropdown-toggle" onClick="clearItems()" id="dropdownMenu1" data-toggle="dropdown" href="#">Projects
+			<span class="caret"></span></a>
+			<ul class="dropdown-menu" id="projectList" aria-labelledby="dropdownMenu1">
+				<div id="menuItems">
+				</div>
+			</ul>
+		</li>
+	</ul>
+	<ul class="nav navbar-nav navbar-right">
+		<form class="navbar-form navbar-left">
+			<div class="input-group">
+				<input type="text" id="projectName" class="form-control" placeholder="New Project">
+					<div class="input-group-btn">
+						<button class="btn btn-default" onClick="createProject()" id="btnCreateProject" data-toggle="collapse" data-target="#myNavbar.in" type="button">Create</button>
+						</button>
+					</div>
 			</div>
+		</form>
+		<ul class="nav navbar-nav navbar-right">
+			<li id="btnLogout"><a href="#"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+		</ul>
+    </ul>
+	</div>
+  </div>
+</nav>
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-xs-2">
 		</div>
-		<div class="col-sm-4">
-		<button type="button" id="btnLogout" class="btn btn-default pull-right">Logout</button>
+		<div class="col-xs-4">
+			<button type="button" id="btnStart" onClick="saveStart()" class="btn btn-default timerButtons">Start Timer</button>
+		</div>
+		<div class="col-xs-4">
+			<button type="button" class="btn btn-default timerButtons"><div class="clockPlaceholder">00:00:00</div>
+			<div id="clock">
+			</div></button>	
+		</div>
+		<div class="col-xs-2">
 		</div>
 	</div>
-
+	<div class="row">
+		<div class="col-xs-12">
+			<div id="projectTitle">
+				<p class="removeTitle">
+					Choose a project or create a new one
+				</p>
+			</div>
+		</div>
+	</div>
+		
+	</div>
+	
+	
 <table id="table" class="table table-bordered">
     <thead>
       <tr>
-        <th>Start Date</th>
-        <th>Start Time</th>
-        <th>Stop Date</th>
-		<th>Stop Time</th>
-		<th>Minutes Worked</th>
+        <th>Date</th>
+        <th>Started</th>
+		<th>Stopped</th>
+		<th>Minutes</th>
       </tr>
     </thead>
 </table>
-
+	
 </div>
 
 <script>
@@ -67,9 +200,12 @@ var config = {
 	};
 firebase.initializeApp(config);
 
+// Get elements
 const btnStart = document.getElementById("btnStart");
 const btnStop = document.getElementById("btnStop");
 const btnLogout = document.getElementById("btnLogout");
+
+var selectedProject = "none";
 
 // Sign out
 btnLogout.addEventListener("click", e => {
@@ -88,6 +224,16 @@ firebase.auth().onAuthStateChanged(firebaseUser => {
 	}
 });
 
+// Close nav if clicked outside of it
+$(document).click(function (event) {
+    var clickover = $(event.target);
+    var $navbar = $(".navbar-collapse");               
+    var _opened = $navbar.hasClass("in");
+    if (_opened === true && !clickover.hasClass("form-control") && !clickover.hasClass("navbar-toggle")) {      
+        $navbar.collapse('hide');
+    }
+});
+
 var d = new Date();
 var date = (d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear());
 var time = (d.getHours()+':'+d.getMinutes());
@@ -104,12 +250,16 @@ function padNumbers(number) {
 	return number;
 }
 
+function resetTime() {
+	hours = 0;
+	minutes = 0;
+	seconds = 0;
+}
+
 function setOriginalT() {
 	d = new Date();
 	t = d.getTime();
 	originalT = t;
-	minutes = 0;
-	hours = 0;
 	return originalT;
 }
 
@@ -140,37 +290,34 @@ var startTime;
 var startT;
 
 function saveStart(){
+	// Save start time to database
+	if (selectedProject == "none") {
+		alert("Choose a project or create a new one");
+	}
 	
-	// Save starting time and start timer
-	if (isStart == 1) {
+	if (isStart == 1 && selectedProject != "none") {
 	
+	resetTime();
+	$("#btnStart").html("Stop Timer");
+	$(".clockPlaceholder").hide();
 	var startD = new Date();
 	startDate = (startD.getDate()+'/'+(startD.getMonth()+1)+'/'+startD.getFullYear());
-	startTime = startD.toTimeString().split(' ')[0];
-	startTime = startTime.split(':');
-	startTime = startTime[0]+":"+startTime[1];
-	console.log(startTime);
-	
+	startTime = (padNumbers(startD.getHours())+':'+padNumbers(startD.getMinutes()));
 	startT = startD.getTime();
 	setOriginalT();
 	var clockInterval = setInterval(clockFunction, 1000);
 
 	isStart--;
-	$("#btnStart").html("Stop");
 	clockFunction();
 	$("#clock").show();
-	console.log("START");
 	return;
 	}
 	
-	// Save stop time and push to batabase
 	if (isStart == 0) {
 	var firebaseRef = firebase.database().ref();
 	var stopD = new Date();
 	var stopDate = (stopD.getDate()+'/'+(stopD.getMonth()+1)+'/'+stopD.getFullYear());
-	stopTime = stopD.toTimeString().split(' ')[0];
-	stopTime = stopTime.split(':');
-	stopTime = stopTime[0]+":"+stopTime[1];
+	var stopTime = (padNumbers(stopD.getHours())+':'+padNumbers(stopD.getMinutes()));
 	stopT = stopD.getTime();
 	
 	var workTime;
@@ -182,7 +329,11 @@ function saveStart(){
 	workTime = workTime/60;
 	workTime = workTime.toFixed(0);
 	
-	firebaseRef.push({
+	var user = firebase.auth().currentUser;
+	var userEmail = user.email;
+	userEmail = userEmail.replace(".", "@");
+	
+	firebaseRef.child(userEmail).child(selectedProject).push({
 		startD: startDate,
 		startTime: startTime,
 		startT: startT,
@@ -191,29 +342,97 @@ function saveStart(){
 		stopT: stopT,
 		workMinutes: workTime
 	});
-	
 	isStart++;
-	$("#btnStart").html("Start");
 	$("#clock").hide();
-	console.log("STOP");
+	$("#btnStart").html("Start Timer");
+	$(".clockPlaceholder").show();
 	return;
 	}
 }
 
-// Insert data to table
-var startRef = firebase.database().ref();
-startRef.on("child_added", snap =>
+function createProject(){
+	var alphanumers = /^[a-zA-Zä-öÄ-Ö0-9]+$/;
+	if(!alphanumers.test($("#projectName").val())){
+		alert("Please use only normal characters and numbers.");
+		return;
+	}
+	
+	var projectName = document.getElementById("projectName");
+	var firebaseRef = firebase.database().ref();
+	var user = firebase.auth().currentUser;
+	var userEmail = user.email;
+	userEmail = userEmail.replace(".", "@");
+	var newProject = projectName.value;
+	
+	firebaseRef.child(userEmail).child(newProject).push({
+	name: newProject
+	});
+	selectNewProject(newProject);
+}
 
-{	var getStartDate = snap.child("startD").val();
+function clearItems() {
+	$('.projectNames').remove();
+	getMenuItems();
+}
+
+function getMenuItems() {
+	var firebaseRef = firebase.database().ref();
+	var user = firebase.auth().currentUser;
+	var userEmail = user.email;
+	userEmail = userEmail.replace(".", "@");
+
+	var childRef = firebase.database().ref(userEmail);
+	childRef.on("value", snap =>
+
+{	snap.forEach(function(childSnapshot) {
+	var childVal = childSnapshot.val();
+	var childKey = childSnapshot.key;
+	$("#menuItems").append("<button type=\"button\" id=\""+childKey+"\" onClick=\"selectProject("+childKey+")\" class=\"btn btn-default btn-block projectNames\" data-toggle=\"collapse\" data-target=\"#myNavbar.in\">"+childKey+"</button>");
+	});
+});
+}
+
+var getProjectName = "asd";
+
+function selectProject(name) {
+	var getProjectName = name.id;
+	selectedProject = name.id;
+	showData(getProjectName);
+	$(".removeTitle").remove();
+	$("#projectTitle").append("<p class=\"removeTitle\">"+"Current Project: "+selectedProject+"</p>");
+}
+
+function selectNewProject(name) {
+	var getProjectName = name;
+	selectedProject = name;
+	showData(getProjectName);
+	$(".removeTitle").remove();
+	$("#projectTitle").append("<p class=\"removeTitle\">"+"Current Project: "+selectedProject+"</p>");
+}
+
+function showData(project) {
+
+	var firebaseRef = firebase.database().ref();
+	var user = firebase.auth().currentUser;
+	var userEmail = user.email;
+	userEmail = userEmail.replace(".", "@");
+
+	$('.tableData').remove();
+	var startRef = firebase.database().ref().child(userEmail).child(project);
+	startRef.on("child_added", snap =>
+
+	// Remove line that would show as null
+	{if (snap.child("name").val() != null) {return};
+
+	var getStartDate = snap.child("startD").val();
 	var getStartTime = snap.child("startTime").val();
-	var getStopDate = snap.child("stopD").val();
 	var getStopTime = snap.child("stopTime").val();
 	var getWorkMinutes = snap.child("workMinutes").val();
 	
-$("#table").append("<tbody>"+"<tr>"+"<td>"+getStartDate+"</td>"
-+"<td>"+getStartTime+"</td>"+"<td>"+getStopDate+"</td>"
-+"<td>"+getStopTime+"</td>"+"<td>"+getWorkMinutes+"</td>"+"</tbody>");
+$("#table").append("<tbody class=\"tableData\">"+"<tr>"+"<td>"+getStartDate+"</td>"
++"<td>"+getStartTime+"</td>"+"<td>"+getStopTime+"</td>"+"<td>"+getWorkMinutes+"</td>"+"</tbody>");
 });
+}
 
 </script>
 </body>

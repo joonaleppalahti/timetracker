@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<title>TimeTracker</title>
+<title>TimeTracker | Login</title>
 <meta charset="utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,13 +11,16 @@
 <script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
 
 <style>
+@import url('https://fonts.googleapis.com/css?family=Sarala');
+
 .container {
 	padding-top: 10px;
-	}
+	font-family: 'Sarala', sans-serif;
+}
 	
 .row {
 	padding-bottom: 2px;
-	}
+}
 </style>
 
 </head>
@@ -44,7 +47,13 @@
 			<button type="button" id="btnLogin" class="btn btn-default">Login</button>
 		</div>
 	</div>
-<div>
+	<div class="row">
+		<div class="col-sm-4">
+				<h2>TimeTracker</h2>
+				<p>Please Log In</p>
+		</div>
+	</div>
+</div>
 
 <script>
 // Initialize Firebase
@@ -57,6 +66,7 @@ var config = {
 	};
 firebase.initializeApp(config);
 
+// Get elements
 const txtEmail = document.getElementById("txtEmail");
 const txtPassword = document.getElementById("txtPassword");
 const btnLogin = document.getElementById("btnLogin");
@@ -80,8 +90,13 @@ btnLogin.addEventListener("click", e => {
 			console.log("not logged in");
 		}
 	});
-});	
-</script>
+});
 
+$("#txtPassword").keyup(function(event){
+    if(event.keyCode == 13){
+        $("#btnLogin").click();
+    }
+});
+</script>
 </body>
 </html>
