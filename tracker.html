@@ -87,7 +87,7 @@ p {
 	border-bottom: solid;
 	border-bottom-width: 2px;
 	border-bottom-color: #b3b3b3;
-	}
+	}	
 }
 
 @media screen and (min-width: 768px) {
@@ -182,6 +182,7 @@ p {
         <th>Started</th>
 		<th>Stopped</th>
 		<th>Minutes</th>
+		<th>Comment</th>
       </tr>
     </thead>
 </table>
@@ -281,7 +282,6 @@ function clockFunction() {
 		hours++;
 		minutes = 0;
 	}
-	
 	document.getElementById("clock").innerHTML = padNumbers(hours)+":"+padNumbers(minutes)+":"+padNumbers(seconds);
 }
 
@@ -290,7 +290,7 @@ var startTime;
 var startT;
 
 function saveStart(){
-	// Save start time to database
+	// Start timer and save data to database
 	if (selectedProject == "none") {
 		alert("Choose a project or create a new one");
 	}
@@ -320,6 +320,7 @@ function saveStart(){
 	var stopTime = (padNumbers(stopD.getHours())+':'+padNumbers(stopD.getMinutes()));
 	stopT = stopD.getTime();
 	
+	var commentAdd;
 	var workTime;
 	var hours;
 	var minutes;
@@ -332,6 +333,7 @@ function saveStart(){
 	var user = firebase.auth().currentUser;
 	var userEmail = user.email;
 	userEmail = userEmail.replace(".", "@");
+	commentAdd = document.getElementById("commentEntry");
 	
 	firebaseRef.child(userEmail).child(selectedProject).push({
 		startD: startDate,
@@ -340,7 +342,10 @@ function saveStart(){
 		stopD: stopDate,
 		stopTime: stopTime,
 		stopT: stopT,
-		workMinutes: workTime
+		workMinutes: workTime,
+		comment: {
+			comment: "Add a comment"
+		}
 	});
 	isStart++;
 	$("#clock").hide();
@@ -392,11 +397,13 @@ function getMenuItems() {
 });
 }
 
-var getProjectName = "asd";
+var getProjectName = "none";
+var currentProject = "none";
 
 function selectProject(name) {
 	var getProjectName = name.id;
 	selectedProject = name.id;
+	currentProject = selectedProject;
 	showData(getProjectName);
 	$(".removeTitle").remove();
 	$("#projectTitle").append("<p class=\"removeTitle\">"+"Current Project: "+selectedProject+"</p>");
@@ -405,6 +412,7 @@ function selectProject(name) {
 function selectNewProject(name) {
 	var getProjectName = name;
 	selectedProject = name;
+	currentProject = selectedProject;
 	showData(getProjectName);
 	$(".removeTitle").remove();
 	$("#projectTitle").append("<p class=\"removeTitle\">"+"Current Project: "+selectedProject+"</p>");
@@ -428,10 +436,37 @@ function showData(project) {
 	var getStartTime = snap.child("startTime").val();
 	var getStopTime = snap.child("stopTime").val();
 	var getWorkMinutes = snap.child("workMinutes").val();
-	
+	var getComment = snap.child("comment").child("comment").val();
+	var getKey = snap.getKey();
+
+// Create table elements ¯\_(ツ)_/¯
 $("#table").append("<tbody class=\"tableData\">"+"<tr>"+"<td>"+getStartDate+"</td>"
-+"<td>"+getStartTime+"</td>"+"<td>"+getStopTime+"</td>"+"<td>"+getWorkMinutes+"</td>"+"</tbody>");
++"<td>"+getStartTime+"</td>"+"<td>"+getStopTime+"</td>"+"<td>"+getWorkMinutes+"</td>"+
+"<td>"+
+"<div class=\"input-group\">"+
+	"<input type=\"text\" id=\""+getKey+1+"\" class=\"form-control\" placeholder=\""+getComment+"\">"+
+		"<div class=\"input-group-btn\">"+
+			"<button class=\"btn btn-default\" onClick=\"updateComment(this.id)\" id=\""+getKey+"\" type=\"button\">Update</button>"+
+			"</button>"+
+		"</div>"+
+"</div>"
++"</td>"+"</tbody>");
 });
+}
+
+function updateComment(id) {
+	var comment = document.getElementById(id+1).value;
+	
+	var firebaseRef = firebase.database().ref();
+	var user = firebase.auth().currentUser;
+	var userEmail = user.email;
+	userEmail = userEmail.replace(".", "@");
+	
+	firebaseRef.child(userEmail).child(currentProject).child(id).update({
+		"comment": {
+		comment: comment
+		}
+	});
 }
 
 </script>
