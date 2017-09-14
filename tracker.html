@@ -332,7 +332,7 @@ function saveStart(){
 	
 	var user = firebase.auth().currentUser;
 	var userEmail = user.email;
-	userEmail = userEmail.replace(".", "@");
+	userEmail = userEmail.replace(/([.])/g, "@");
 	commentAdd = document.getElementById("commentEntry");
 	
 	firebaseRef.child(userEmail).child(selectedProject).push({
@@ -366,7 +366,7 @@ function createProject(){
 	var firebaseRef = firebase.database().ref();
 	var user = firebase.auth().currentUser;
 	var userEmail = user.email;
-	userEmail = userEmail.replace(".", "@");
+	userEmail = userEmail.replace(/([.])/g, "@");
 	var newProject = projectName.value;
 	
 	firebaseRef.child(userEmail).child(newProject).push({
@@ -384,7 +384,7 @@ function getMenuItems() {
 	var firebaseRef = firebase.database().ref();
 	var user = firebase.auth().currentUser;
 	var userEmail = user.email;
-	userEmail = userEmail.replace(".", "@");
+	userEmail = userEmail.replace(/([.])/g, "@");
 
 	var childRef = firebase.database().ref(userEmail);
 	childRef.on("value", snap =>
@@ -423,7 +423,7 @@ function showData(project) {
 	var firebaseRef = firebase.database().ref();
 	var user = firebase.auth().currentUser;
 	var userEmail = user.email;
-	userEmail = userEmail.replace(".", "@");
+	userEmail = userEmail.replace(/([.])/g, "@");
 
 	$('.tableData').remove();
 	var startRef = firebase.database().ref().child(userEmail).child(project);
@@ -460,7 +460,7 @@ function updateComment(id) {
 	var firebaseRef = firebase.database().ref();
 	var user = firebase.auth().currentUser;
 	var userEmail = user.email;
-	userEmail = userEmail.replace(".", "@");
+	userEmail = userEmail.replace(/([.])/g, "@");
 	
 	firebaseRef.child(userEmail).child(currentProject).child(id).update({
 		"comment": {
